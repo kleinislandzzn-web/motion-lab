@@ -129,14 +129,14 @@ button { cursor: pointer; }
 .card-context button { align-self: stretch; padding: 0 0 0 14px; border: 0; border-left: 1px solid #253a2d; background: transparent; color: #687d6f; font: 8px var(--font-mono); white-space: nowrap; }
 .card-context button:hover { color: var(--amber); }
 .card-context button i { margin-left: 4px; color: var(--amber); font-style: normal; }
-.card-actions { display: grid; grid-template-columns: auto auto 1fr 1.25fr; border-top: 1px solid var(--line); }
+.card-actions { display: grid; grid-template-columns: .8fr 1fr 1.25fr; border-top: 1px solid var(--line); }
 .card-actions button { min-height: 45px; border: 0; border-right: 1px solid var(--line); background: transparent; color: #788c7e; font: 9px var(--font-mono); }
 .card-actions button:hover, .card-actions button.active { background: #132219; color: var(--phosphor); }
 .card-actions .copy-action { border-right: 0; background: rgba(183,255,60,.055); color: var(--phosphor); }
 
 /* Demo components */
-.demo-magnetic { display: flex; gap: 30px; align-items: center; padding: 16px 19px 16px 23px; border: 0; background: var(--phosphor); color: #07110d; box-shadow: 0 0 0 rgba(183,255,60,0); font: 700 12px var(--font-mono); transition: transform calc(.45s * var(--motion-speed)) cubic-bezier(.2,1.5,.3,1), box-shadow .25s; }
-.demo-magnetic:hover { box-shadow: 0 14px 38px rgba(183,255,60,.2); }
+.demo-magnetic { display: flex; gap: 30px; align-items: center; padding: 16px 19px 16px 23px; border: 0; background: var(--phosphor); color: #07110d; box-shadow: 0 0 0 rgba(183,255,60,0); font: 700 12px var(--font-mono); animation: magnetic-idle calc(3.2s * var(--motion-speed)) ease-in-out infinite; transition: transform calc(.45s * var(--motion-speed)) cubic-bezier(.2,1.5,.3,1), box-shadow .25s; }
+.demo-magnetic:hover { animation-play-state: paused; box-shadow: 0 14px 38px rgba(183,255,60,.2); }
 .demo-magnetic b { font-size: 18px; }
 .demo-liquid { display: grid; gap: 11px; justify-items: center; border: 0; background: transparent; color: #72867a; font: 9px var(--font-mono); letter-spacing: .1em; }
 .liquid-track { display: block; width: 80px; height: 40px; padding: 5px; border: 1px solid #41594a; border-radius: 99px; background: #0c1710; transition: .4s; }
@@ -158,7 +158,8 @@ button { cursor: pointer; }
 .demo-search > span { min-width: 47px; text-align: center; color: var(--phosphor); font-size: 22px; }
 .demo-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--paper); font: 10px var(--font-mono); }
 .demo-search button { border: 0; padding: 12px; background: transparent; color: #738579; }
-.demo-spot { --mx:50%; --my:50%; --rx:0deg; --ry:0deg; width: min(255px,100%); padding: 24px; border: 1px solid #42594a; background: radial-gradient(circle at var(--mx) var(--my),rgba(183,255,60,.2),transparent 36%),#101a15; transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .14s; }
+.demo-spot { --mx:50%; --my:50%; --rx:0deg; --ry:0deg; width: min(255px,100%); padding: 24px; border: 1px solid #42594a; background: radial-gradient(circle at var(--mx) var(--my),rgba(183,255,60,.2),transparent 36%),#101a15; transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry)); animation: spotlight-idle calc(3.6s * var(--motion-speed)) ease-in-out infinite; transition: transform .14s; }
+.demo-spot:hover { animation-play-state: paused; }
 .demo-spot small { color: var(--phosphor); font: 8px var(--font-mono); letter-spacing: .14em; }
 .demo-spot strong { display: block; margin: 42px 0 9px; color: var(--paper); font: 700 25px var(--font-mono); }
 .demo-spot p { margin: 0; color: #819085; font: 9px var(--font-mono); }
@@ -277,6 +278,8 @@ button { cursor: pointer; }
 .copy-toast { position: fixed; z-index: 80; left: 50%; bottom: 28px; transform: translateX(-50%); padding: 12px 18px; border: 1px solid var(--phosphor); background: #101f16; color: var(--phosphor); box-shadow: 0 12px 40px rgba(0,0,0,.4); font: 10px var(--font-mono); animation: toast-in .35s ease-out; }
 
 @keyframes live-pulse { 50% { opacity: .35; transform: scale(.7); } }
+@keyframes magnetic-idle { 0%, 100% { translate: -5px 0; scale: 1; } 50% { translate: 5px -4px; scale: 1.035; } }
+@keyframes spotlight-idle { 0%, 100% { translate: -3px 1px; scale: 1; box-shadow: 0 8px 28px rgba(0,0,0,.18); } 50% { translate: 3px -3px; scale: 1.018; box-shadow: 0 16px 40px rgba(183,255,60,.08); } }
 @keyframes ripple-wave { to { opacity: 0; transform: translate(-50%,-50%) scale(22); } }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-15px) scale(.9); } }
 @keyframes panel-in { from { opacity: 0; transform: translateX(60px); } }

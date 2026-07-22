@@ -29,17 +29,17 @@ import {
   type MotionDefinition,
 } from "./motion-data";
 
-type DemoProps = { speed: number; reduced: boolean; runId: number };
+type DemoProps = { speed: number; reduced: boolean };
 type CodeTab = "html" | "css" | "js" | "full";
 
 const demoMap: Record<string, (props: DemoProps) => ReactNode> = {
   "magnetic-cta": (props) => <MagneticDemo {...props} />,
-  "liquid-toggle": () => <LiquidToggleDemo />,
-  "ripple-success": () => <RippleDemo />,
-  "sliding-tabs": () => <TabsDemo />,
-  "expanding-search": () => <SearchDemo />,
+  "liquid-toggle": (props) => <LiquidToggleDemo {...props} />,
+  "ripple-success": (props) => <RippleDemo {...props} />,
+  "sliding-tabs": (props) => <TabsDemo {...props} />,
+  "expanding-search": (props) => <SearchDemo {...props} />,
   "spotlight-card": (props) => <SpotlightDemo {...props} />,
-  "toast-stack": () => <ToastDemo />,
+  "toast-stack": (props) => <ToastDemo {...props} />,
   "decoder-text": (props) => <DecoderDemo {...props} />,
   "stagger-list": (props) => <StaggerDemo {...props} />,
   "kpi-counter": (props) => <KpiDemo {...props} />,
@@ -71,17 +71,21 @@ function DemoStage({
   motion,
   speed,
   reduced,
-  runId,
   large = false,
 }: {
   motion: MotionDefinition;
   speed: number;
   reduced: boolean;
-  runId: number;
   large?: boolean;
 }) {
   const { ref, visible } = useVisible<HTMLDivElement>();
+  const [cycle, setCycle] = useState(0);
   const render = demoMap[motion.id];
+  useEffect(() => {
+    if (!visible || reduced) return;
+    const timer = window.setInterval(() => setCycle((value) => value + 1), 5200 / speed);
+    return () => window.clearInterval(timer);
+  }, [visible, reduced, speed]);
   return (
     <div
       ref={ref}
@@ -92,8 +96,8 @@ function DemoStage({
       <div className="stage-corner stage-corner-a">⌜</div>
       <div className="stage-corner stage-corner-b">⌟</div>
       {visible && render ? (
-        <div className="demo-inner" key={`${runId}-${speed}-${reduced}`}>
-          {render({ speed, reduced, runId })}
+        <div className="demo-inner" key={`${cycle}-${speed}-${reduced}`}>
+          {render({ speed, reduced })}
         </div>
       ) : (
         <div className="demo-sleep">SLEEP MODE</div>
@@ -125,8 +129,13 @@ function MagneticDemo({ reduced }: DemoProps) {
   );
 }
 
-function LiquidToggleDemo() {
+function LiquidToggleDemo({ speed, reduced }: DemoProps) {
   const [on, setOn] = useState(true);
+  useEffect(() => {
+    if (reduced) return;
+    const timer = window.setInterval(() => setOn((value) => !value), 1500 / speed);
+    return () => window.clearInterval(timer);
+  }, [speed, reduced]);
   return (
     <button
       className={`demo-liquid ${on ? "is-on" : ""}`}
@@ -139,9 +148,22 @@ function LiquidToggleDemo() {
   );
 }
 
-function RippleDemo() {
+function RippleDemo({ speed, reduced }: DemoProps) {
   const [done, setDone] = useState(false);
   const [ripple, setRipple] = useState<{ x: number; y: number; id: number }>();
+  useEffect(() => {
+    if (reduced) return;
+    const rippleTimer = window.setTimeout(
+      () => setRipple({ x: 78, y: 24, id: Date.now() }),
+      560 / speed,
+    );
+    const doneTimer = window.setTimeout(() => setDone(true), 920 / speed);
+    const resetTimer = window.setTimeout(() => {
+      setDone(false);
+      setRipple(undefined);
+    }, 3300 / speed);
+    return () => [rippleTimer, doneTimer, resetTimer].forEach(window.clearTimeout);
+  }, [speed, reduced]);
   function click(event: ReactMouseEvent<HTMLButtonElement>) {
     if (done) {
       setDone(false);
@@ -159,8 +181,13 @@ function RippleDemo() {
   );
 }
 
-function TabsDemo() {
+function TabsDemo({ speed, reduced }: DemoProps) {
   const [active, setActive] = useState(0);
+  useEffect(() => {
+    if (reduced) return;
+    const timer = window.setInterval(() => setActive((value) => (value + 1) % 3), 1100 / speed);
+    return () => window.clearInterval(timer);
+  }, [speed, reduced]);
   return (
     <div className="demo-tabs" style={{ "--active": active } as CSSProperties}>
       <i />
@@ -173,11 +200,18 @@ function TabsDemo() {
   );
 }
 
-function SearchDemo() {
+function SearchDemo({ speed, reduced }: DemoProps) {
   const [open, setOpen] = useState(false);
+  const [autoOpen, setAutoOpen] = useState(false);
   const [value, setValue] = useState("");
+  useEffect(() => {
+    if (reduced) return;
+    const openTimer = window.setTimeout(() => setAutoOpen(true), 520 / speed);
+    const closeTimer = window.setTimeout(() => setAutoOpen(false), 3100 / speed);
+    return () => [openTimer, closeTimer].forEach(window.clearTimeout);
+  }, [speed, reduced]);
   return (
-    <label className={`demo-search ${open || value ? "is-open" : ""}`}>
+    <label className={`demo-search ${open || autoOpen || value ? "is-open" : ""}`}>
       <span>⌕</span>
       <input
         aria-label="搜索系统"
@@ -216,8 +250,16 @@ function SpotlightDemo({ reduced }: DemoProps) {
   );
 }
 
-function ToastDemo() {
+function ToastDemo({ speed, reduced }: DemoProps) {
   const [toasts, setToasts] = useState([1, 2]);
+  useEffect(() => {
+    if (reduced) return;
+    const timer = window.setInterval(
+      () => setToasts((items) => [Math.max(0, ...items) + 1, ...items].slice(0, 3)),
+      1350 / speed,
+    );
+    return () => window.clearInterval(timer);
+  }, [speed, reduced]);
   function add() {
     setToasts((items) => [Math.max(0, ...items) + 1, ...items].slice(0, 3));
   }
@@ -296,6 +338,15 @@ function KpiDemo({ speed, reduced }: DemoProps) {
 function ErrorDemo({ speed, reduced }: DemoProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
+  useEffect(() => {
+    if (reduced) return;
+    const timer = window.setTimeout(() => {
+      setError(true);
+      const input = ref.current?.querySelector("input");
+      if (input) animate(input, { x: [0, -9, 8, -6, 4, 0], duration: 520 / speed, ease: "outQuad" });
+    }, 720 / speed);
+    return () => window.clearTimeout(timer);
+  }, [speed, reduced]);
   function validate() {
     setError(true);
     const input = ref.current?.querySelector("input");
@@ -313,6 +364,12 @@ function ErrorDemo({ speed, reduced }: DemoProps) {
 function CommandDemo({ speed, reduced }: DemoProps) {
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (reduced) return;
+    const openTimer = window.setTimeout(() => setOpen(true), 520 / speed);
+    const closeTimer = window.setTimeout(() => setOpen(false), 3650 / speed);
+    return () => [openTimer, closeTimer].forEach(window.clearTimeout);
+  }, [speed, reduced]);
   useEffect(() => {
     if (!open || !root.current || reduced) return;
     const context = gsap.context(() => {
@@ -341,6 +398,17 @@ function FlipDemo({ speed, reduced }: DemoProps) {
     setOrder((items) => [...items].reverse());
     window.requestAnimationFrame(() => Flip.from(state, { duration: 0.7 / speed, ease: "power3.inOut", stagger: 0.04 / speed }));
   }
+  useEffect(() => {
+    if (reduced) return;
+    const timer = window.setTimeout(() => {
+      if (!grid.current) return;
+      gsap.registerPlugin(Flip);
+      const state = Flip.getState(grid.current.children);
+      setOrder((items) => [...items].reverse());
+      window.requestAnimationFrame(() => Flip.from(state, { duration: 0.7 / speed, ease: "power3.inOut", stagger: 0.04 / speed }));
+    }, 850 / speed);
+    return () => window.clearTimeout(timer);
+  }, [speed, reduced]);
   return (
     <div className="demo-flip"><button onClick={reorder}>切换排序 ↕</button><div ref={grid}>{order.map((item) => <i key={item}>{item}</i>)}</div></div>
   );
@@ -359,7 +427,10 @@ function SheetDemo({ speed, reduced }: DemoProps) {
         gsap.to(sheet.current, { y: this.y < 22 ? -20 : 64, duration: 0.45 / speed, ease: "back.out(1.4)" });
       },
     });
-    return () => { instance.kill(); };
+    const auto = gsap.timeline({ repeat: -1, repeatDelay: 0.45 / speed })
+      .to(sheet.current, { y: -20, duration: 0.9 / speed, delay: 0.55 / speed, ease: "power2.inOut" })
+      .to(sheet.current, { y: 64, duration: 0.9 / speed, delay: 0.8 / speed, ease: "power2.inOut" });
+    return () => { auto.kill(); instance.kill(); };
   }, [speed, reduced]);
   return (
     <div className="demo-sheet-stage"><div className="map-dot dot-a" /><div className="map-dot dot-b" /><article ref={sheet}><i /><b>拖动面板</b><p>释放后自动吸附到最近位置</p><span>DETAIL / 84%</span></article></div>
@@ -377,7 +448,13 @@ function ScrollDemo({ speed, reduced }: DemoProps) {
       opacity: 0.45,
       scrollTrigger: { trigger: card, scroller: scroller.current, start: "top bottom", end: "top center", scrub: 1 / speed },
     }));
-    return () => animations.forEach((animation) => { animation.scrollTrigger?.kill(); animation.kill(); });
+    const auto = gsap.timeline({ repeat: -1, repeatDelay: 0.4 / speed })
+      .to(scroller.current, { scrollTop: scroller.current.scrollHeight - scroller.current.clientHeight, duration: 2.5 / speed, ease: "power1.inOut" })
+      .to(scroller.current, { scrollTop: 0, duration: 1.1 / speed, delay: 0.55 / speed, ease: "power1.inOut" });
+    return () => {
+      auto.kill();
+      animations.forEach((animation) => { animation.scrollTrigger?.kill(); animation.kill(); });
+    };
   }, [speed, reduced]);
   return (
     <div className="demo-scroll" ref={scroller}>
@@ -484,7 +561,6 @@ export default function MotionLab() {
   const [codeTab, setCodeTab] = useState<CodeTab>("full");
   const [reduced, setReduced] = useState(false);
   const [copied, setCopied] = useState<string>();
-  const [runIds, setRunIds] = useState<Record<string, number>>({});
   const [slowIds, setSlowIds] = useState<Set<string>>(new Set());
   const [view, setView] = useState<"archive" | "glossary">("archive");
   const [glossaryTerm, setGlossaryTerm] = useState<string>();
@@ -549,10 +625,6 @@ export default function MotionLab() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  }
-
-  function replay(id: string) {
-    setRunIds((ids) => ({ ...ids, [id]: (ids[id] || 0) + 1 }));
   }
 
   function toggleSlow(id: string) {
@@ -630,7 +702,7 @@ export default function MotionLab() {
           return (
             <article className="motion-card" key={motion.id}>
               <div className="card-head"><span>{motion.index}</span><div><small>{motion.category} / {motion.engine}</small><h2>{motion.title}</h2></div><button className={favorites.has(motion.id) ? "is-favorite" : ""} aria-label={`收藏${motion.title}`} onClick={() => toggleFavorite(motion.id)}>{favorites.has(motion.id) ? "♥" : "♡"}</button></div>
-              <DemoStage motion={motion} speed={isSlow ? 0.5 : 1} reduced={reduced} runId={runIds[motion.id] || 0} />
+              <DemoStage motion={motion} speed={isSlow ? 0.5 : 1} reduced={reduced} />
               <div className="card-copy">
                 <p>{motion.description}</p>
                 <div className="card-context">
@@ -638,7 +710,7 @@ export default function MotionLab() {
                   <button onClick={() => openGlossary()}>查看 {motion.tags.length} 个相关术语 <i>↗</i></button>
                 </div>
               </div>
-              <div className="card-actions"><button onClick={() => replay(motion.id)}>↻ 重播</button><button className={isSlow ? "active" : ""} onClick={() => toggleSlow(motion.id)}>{isSlow ? "0.5×" : "1×"}</button><button onClick={() => { setSelectedId(motion.id); setCodeTab("full"); }}>查看代码</button><button className="copy-action" onClick={() => copyMotion(motion)}>{copied === motion.id ? "✓ 已复制" : "复制片段"}</button></div>
+              <div className="card-actions"><button className={isSlow ? "active" : ""} onClick={() => toggleSlow(motion.id)}>{isSlow ? "0.5× 慢放" : "1× 速度"}</button><button onClick={() => { setSelectedId(motion.id); setCodeTab("full"); }}>查看代码</button><button className="copy-action" onClick={() => copyMotion(motion)}>{copied === motion.id ? "✓ 已复制" : "复制片段"}</button></div>
             </article>
           );
         })}
@@ -652,7 +724,7 @@ export default function MotionLab() {
         <div className="detail-backdrop" role="dialog" aria-modal="true" aria-label={`${selected.title} 代码详情`} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedId(undefined); }}>
           <aside className="detail-panel">
             <header><div><span>{selected.index} / {selected.engine}</span><h2>{selected.title}</h2><p>{selected.description}</p></div><button onClick={() => setSelectedId(undefined)} aria-label="关闭">×</button></header>
-            <div className="detail-preview"><DemoStage motion={selected} speed={slowIds.has(selected.id) ? 0.5 : 1} reduced={reduced} runId={runIds[selected.id] || 0} large /><div><small>推荐场景</small><p>{selected.useCase}</p><small>依赖</small><p>{selected.dependencies.length ? `${selected.engine} · 复制片段时通过版本化 CDN 加载` : "无第三方依赖 · 可离线运行"}</p></div></div>
+            <div className="detail-preview"><DemoStage motion={selected} speed={slowIds.has(selected.id) ? 0.5 : 1} reduced={reduced} large /><div><small>推荐场景</small><p>{selected.useCase}</p><small>播放方式</small><p>进入视野后自动循环，离开视野自动暂停</p><small>依赖</small><p>{selected.dependencies.length ? `${selected.engine} · 复制片段时通过版本化 CDN 加载` : "无第三方依赖 · 可离线运行"}</p></div></div>
             <div className="code-toolbar"><div>{(["html", "css", "js", "full"] as CodeTab[]).map((tab) => <button className={codeTab === tab ? "active" : ""} onClick={() => setCodeTab(tab)} key={tab}>{tab === "full" ? "完整片段" : tab.toUpperCase()}</button>)}</div><button className="copy-code" onClick={() => copyMotion(selected, currentCode)}>{copied === selected.id ? "✓ 已复制" : "复制当前代码"}</button></div>
             <CodeBlock code={currentCode} />
           </aside>
