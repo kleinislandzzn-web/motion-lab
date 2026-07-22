@@ -54,5 +54,6 @@ test("glossary explains every card tag in plain Chinese", async () => {
   assert.match(interfaceSource, /查看 \{motion\.tags\.length\} 个相关术语/);
   assert.doesNotMatch(interfaceSource, /className="tag-row"/);
   assert.doesNotMatch(interfaceSource, /↻ 重播/);
-  assert.match(interfaceSource, /window\.setInterval\(\(\) => setCycle/);
+  assert.doesNotMatch(interfaceSource, /setCycle|key=\{`\$\{cycle\}/);
+  assert.match(interfaceSource, /const loop = window\.setInterval\(play/);
 });

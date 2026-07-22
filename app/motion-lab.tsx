@@ -79,13 +79,7 @@ function DemoStage({
   large?: boolean;
 }) {
   const { ref, visible } = useVisible<HTMLDivElement>();
-  const [cycle, setCycle] = useState(0);
   const render = demoMap[motion.id];
-  useEffect(() => {
-    if (!visible || reduced) return;
-    const timer = window.setInterval(() => setCycle((value) => value + 1), 5200 / speed);
-    return () => window.clearInterval(timer);
-  }, [visible, reduced, speed]);
   return (
     <div
       ref={ref}
@@ -96,7 +90,7 @@ function DemoStage({
       <div className="stage-corner stage-corner-a">⌜</div>
       <div className="stage-corner stage-corner-b">⌟</div>
       {visible && render ? (
-        <div className="demo-inner" key={`${cycle}-${speed}-${reduced}`}>
+        <div className="demo-inner">
           {render({ speed, reduced })}
         </div>
       ) : (
@@ -153,16 +147,26 @@ function RippleDemo({ speed, reduced }: DemoProps) {
   const [ripple, setRipple] = useState<{ x: number; y: number; id: number }>();
   useEffect(() => {
     if (reduced) return;
-    const rippleTimer = window.setTimeout(
-      () => setRipple({ x: 78, y: 24, id: Date.now() }),
-      560 / speed,
-    );
-    const doneTimer = window.setTimeout(() => setDone(true), 920 / speed);
-    const resetTimer = window.setTimeout(() => {
-      setDone(false);
-      setRipple(undefined);
-    }, 3300 / speed);
-    return () => [rippleTimer, doneTimer, resetTimer].forEach(window.clearTimeout);
+    let rippleTimer = 0;
+    let doneTimer = 0;
+    let resetTimer = 0;
+    const play = () => {
+      rippleTimer = window.setTimeout(
+        () => setRipple({ x: 78, y: 24, id: Date.now() }),
+        560 / speed,
+      );
+      doneTimer = window.setTimeout(() => setDone(true), 920 / speed);
+      resetTimer = window.setTimeout(() => {
+        setDone(false);
+        setRipple(undefined);
+      }, 3300 / speed);
+    };
+    play();
+    const loop = window.setInterval(play, 4200 / speed);
+    return () => {
+      window.clearInterval(loop);
+      [rippleTimer, doneTimer, resetTimer].forEach((timer) => window.clearTimeout(timer));
+    };
   }, [speed, reduced]);
   function click(event: ReactMouseEvent<HTMLButtonElement>) {
     if (done) {
@@ -206,9 +210,18 @@ function SearchDemo({ speed, reduced }: DemoProps) {
   const [value, setValue] = useState("");
   useEffect(() => {
     if (reduced) return;
-    const openTimer = window.setTimeout(() => setAutoOpen(true), 520 / speed);
-    const closeTimer = window.setTimeout(() => setAutoOpen(false), 3100 / speed);
-    return () => [openTimer, closeTimer].forEach(window.clearTimeout);
+    let openTimer = 0;
+    let closeTimer = 0;
+    const play = () => {
+      openTimer = window.setTimeout(() => setAutoOpen(true), 520 / speed);
+      closeTimer = window.setTimeout(() => setAutoOpen(false), 3100 / speed);
+    };
+    play();
+    const loop = window.setInterval(play, 4200 / speed);
+    return () => {
+      window.clearInterval(loop);
+      [openTimer, closeTimer].forEach((timer) => window.clearTimeout(timer));
+    };
   }, [speed, reduced]);
   return (
     <label className={`demo-search ${open || autoOpen || value ? "is-open" : ""}`}>
@@ -282,13 +295,15 @@ function DecoderDemo({ speed, reduced }: DemoProps) {
   useEffect(() => {
     if (reduced) return;
     let frame = 0;
+    const decodedAt = text.length * 2;
+    const restartAt = decodedAt + 42;
     const timer = window.setInterval(() => {
-      setValue(text.split("").map((char, index) => index < frame / 2 || char === " " ? char : chars[Math.floor(Math.random() * chars.length)]).join(""));
-      frame += 1;
-      if (frame > text.length * 2) {
-        window.clearInterval(timer);
+      if (frame <= decodedAt) {
+        setValue(text.split("").map((char, index) => index < frame / 2 || char === " " ? char : chars[Math.floor(Math.random() * chars.length)]).join(""));
+      } else {
         setValue(text);
       }
+      frame = (frame + 1) % restartAt;
     }, 32 / speed);
     return () => window.clearInterval(timer);
   }, [reduced, speed]);
@@ -300,7 +315,13 @@ function StaggerDemo({ speed, reduced }: DemoProps) {
   useEffect(() => {
     if (!ref.current || reduced) return;
     const playback = animate(ref.current.querySelectorAll("li"), {
-      opacity: [0, 1], x: [-24, 0], delay: stagger(90 / speed), duration: 620 / speed, ease: "outExpo",
+      opacity: [0, 1, 1, 0],
+      x: [-24, 0, 0, 24],
+      delay: stagger(90 / speed),
+      duration: 2600 / speed,
+      loopDelay: 260 / speed,
+      loop: true,
+      ease: "inOutQuad",
     });
     return () => { playback.pause(); };
   }, [speed, reduced]);
@@ -316,22 +337,35 @@ function StaggerDemo({ speed, reduced }: DemoProps) {
 
 function KpiDemo({ speed, reduced }: DemoProps) {
   const [value, setValue] = useState(reduced ? 94 : 0);
-  const numberRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (reduced) return;
-    let current = 0;
-    const timer = window.setInterval(() => {
-      current = Math.min(94, current + Math.ceil((94 - current) * 0.18));
-      setValue(current);
-      if (current === 94) {
-        window.clearInterval(timer);
-        if (numberRef.current) animate(numberRef.current, { scale: [0.8, 1], duration: 520 / speed, ease: "outElastic(1,.5)" });
+    const upDuration = 1450 / speed;
+    const holdDuration = 950 / speed;
+    const downDuration = 1050 / speed;
+    const restDuration = 500 / speed;
+    const cycleDuration = upDuration + holdDuration + downDuration + restDuration;
+    const startedAt = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const elapsed = (now - startedAt) % cycleDuration;
+      let progress = 0;
+      if (elapsed < upDuration) {
+        const t = elapsed / upDuration;
+        progress = 1 - Math.pow(1 - t, 3);
+      } else if (elapsed < upDuration + holdDuration) {
+        progress = 1;
+      } else if (elapsed < upDuration + holdDuration + downDuration) {
+        const t = (elapsed - upDuration - holdDuration) / downDuration;
+        progress = 1 - t * t * (3 - 2 * t);
       }
-    }, 32 / speed);
-    return () => window.clearInterval(timer);
+      setValue(Math.round(progress * 94));
+      frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
   }, [speed, reduced]);
   return (
-    <div className="demo-kpi"><small>RENDER SCORE</small><strong ref={numberRef}>{value}</strong><em>/100</em><i style={{ width: `${value}%` }} /></div>
+    <div className="demo-kpi"><small>RENDER SCORE</small><strong>{value}</strong><em>/100</em><i style={{ width: `${value}%` }} /></div>
   );
 }
 
@@ -340,12 +374,22 @@ function ErrorDemo({ speed, reduced }: DemoProps) {
   const [error, setError] = useState(false);
   useEffect(() => {
     if (reduced) return;
-    const timer = window.setTimeout(() => {
-      setError(true);
-      const input = ref.current?.querySelector("input");
-      if (input) animate(input, { x: [0, -9, 8, -6, 4, 0], duration: 520 / speed, ease: "outQuad" });
-    }, 720 / speed);
-    return () => window.clearTimeout(timer);
+    let errorTimer = 0;
+    let resetTimer = 0;
+    const play = () => {
+      errorTimer = window.setTimeout(() => {
+        setError(true);
+        const input = ref.current?.querySelector("input");
+        if (input) animate(input, { x: [0, -9, 8, -6, 4, 0], duration: 520 / speed, ease: "outQuad" });
+      }, 720 / speed);
+      resetTimer = window.setTimeout(() => setError(false), 2800 / speed);
+    };
+    play();
+    const loop = window.setInterval(play, 3900 / speed);
+    return () => {
+      window.clearInterval(loop);
+      [errorTimer, resetTimer].forEach((timer) => window.clearTimeout(timer));
+    };
   }, [speed, reduced]);
   function validate() {
     setError(true);
@@ -366,9 +410,18 @@ function CommandDemo({ speed, reduced }: DemoProps) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (reduced) return;
-    const openTimer = window.setTimeout(() => setOpen(true), 520 / speed);
-    const closeTimer = window.setTimeout(() => setOpen(false), 3650 / speed);
-    return () => [openTimer, closeTimer].forEach(window.clearTimeout);
+    let openTimer = 0;
+    let closeTimer = 0;
+    const play = () => {
+      openTimer = window.setTimeout(() => setOpen(true), 520 / speed);
+      closeTimer = window.setTimeout(() => setOpen(false), 3450 / speed);
+    };
+    play();
+    const loop = window.setInterval(play, 4200 / speed);
+    return () => {
+      window.clearInterval(loop);
+      [openTimer, closeTimer].forEach((timer) => window.clearTimeout(timer));
+    };
   }, [speed, reduced]);
   useEffect(() => {
     if (!open || !root.current || reduced) return;
@@ -400,14 +453,19 @@ function FlipDemo({ speed, reduced }: DemoProps) {
   }
   useEffect(() => {
     if (reduced) return;
-    const timer = window.setTimeout(() => {
+    const play = () => {
       if (!grid.current) return;
       gsap.registerPlugin(Flip);
       const state = Flip.getState(grid.current.children);
       setOrder((items) => [...items].reverse());
       window.requestAnimationFrame(() => Flip.from(state, { duration: 0.7 / speed, ease: "power3.inOut", stagger: 0.04 / speed }));
-    }, 850 / speed);
-    return () => window.clearTimeout(timer);
+    };
+    const first = window.setTimeout(play, 850 / speed);
+    const loop = window.setInterval(play, 2800 / speed);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(loop);
+    };
   }, [speed, reduced]);
   return (
     <div className="demo-flip"><button onClick={reorder}>切换排序 ↕</button><div ref={grid}>{order.map((item) => <i key={item}>{item}</i>)}</div></div>
