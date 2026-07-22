@@ -13,6 +13,7 @@
   --muted: #809287;
   --danger: #ff7d61;
   --font-mono: var(--font-geist-mono), "SFMono-Regular", Consolas, monospace;
+  --font-code: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   --font-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
 }
 
@@ -106,8 +107,8 @@ button { cursor: pointer; }
 .motion-card:hover { z-index: 2; border-color: #587663; transform: translateY(-3px); box-shadow: 0 24px 65px rgba(0,0,0,.3); }
 .card-head { display: grid; grid-template-columns: 44px 1fr 36px; gap: 12px; align-items: start; min-height: 88px; padding: 17px; border-bottom: 1px solid var(--line); }
 .card-head > span { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #3d5746; color: var(--amber); font: 11px var(--font-mono); }
-.card-head small { color: #657b6d; font: 8px var(--font-mono); letter-spacing: .12em; }
-.card-head h2 { margin: 6px 0 0; color: #e3eee6; font-size: 15px; font-weight: 550; letter-spacing: .01em; }
+.card-head small { display: block; margin-top: 7px; color: #586b5f; font: 600 7px/1.2 var(--font-code); letter-spacing: .12em; }
+.card-head h2 { margin: 0; color: #e3eee6; font-size: 15px; font-weight: 550; letter-spacing: .01em; }
 .card-head > button { width: 34px; height: 34px; border: 1px solid transparent; background: transparent; color: #6a7d70; font-size: 17px; }
 .card-head > button:hover, .card-head > button.is-favorite { border-color: #4e654f; color: var(--phosphor); }
 

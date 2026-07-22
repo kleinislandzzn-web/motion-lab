@@ -32,6 +32,23 @@ import {
 type DemoProps = { speed: number; reduced: boolean };
 type CodeTab = "html" | "css" | "js" | "full";
 
+const categoryCode = {
+  按钮: "Button",
+  表单: "Form",
+  导航: "Navigation",
+  卡片: "Card",
+  反馈: "Feedback",
+  文字: "Text",
+  布局: "Layout",
+  滚动: "Scroll",
+} as const;
+
+const engineCode = {
+  原生: "Native",
+  "Anime.js": "Anime.js",
+  GSAP: "GSAP",
+} as const;
+
 const demoMap: Record<string, (props: DemoProps) => ReactNode> = {
   "magnetic-cta": (props) => <MagneticDemo {...props} />,
   "liquid-toggle": (props) => <LiquidToggleDemo {...props} />,
@@ -759,7 +776,7 @@ export default function MotionLab() {
           const isSlow = slowIds.has(motion.id);
           return (
             <article className="motion-card" key={motion.id}>
-              <div className="card-head"><span>{motion.index}</span><div><small>{motion.category} / {motion.engine}</small><h2>{motion.title}</h2></div><button className={favorites.has(motion.id) ? "is-favorite" : ""} aria-label={`收藏${motion.title}`} onClick={() => toggleFavorite(motion.id)}>{favorites.has(motion.id) ? "♥" : "♡"}</button></div>
+              <div className="card-head"><span>{motion.index}</span><div><h2>{motion.title}</h2><small>{categoryCode[motion.category]} / {engineCode[motion.engine]}</small></div><button className={favorites.has(motion.id) ? "is-favorite" : ""} aria-label={`收藏${motion.title}`} onClick={() => toggleFavorite(motion.id)}>{favorites.has(motion.id) ? "♥" : "♡"}</button></div>
               <DemoStage motion={motion} speed={isSlow ? 0.5 : 1} reduced={reduced} />
               <div className="card-copy">
                 <p>{motion.description}</p>
