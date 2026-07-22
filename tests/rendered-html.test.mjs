@@ -40,9 +40,10 @@ test("catalog contains 15 uniquely scoped samples", async () => {
 });
 
 test("glossary explains every card tag in plain Chinese", async () => {
-  const [catalog, glossary] = await Promise.all([
+  const [catalog, glossary, interfaceSource] = await Promise.all([
     readFile(new URL("../app/motion-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/glossary-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/motion-lab.tsx", import.meta.url), "utf8"),
   ]);
   const terms = [...glossary.matchAll(/\{ id: "([^"]+)", term: "([^"]+)"/g)];
   assert.ok(terms.length >= 40);
@@ -50,4 +51,6 @@ test("glossary explains every card tag in plain Chinese", async () => {
   assert.match(glossary, /label: "关键行动按钮"/);
   assert.match(glossary, /label: "布局过渡技术"/);
   assert.match(catalog, /tags: \["pointer", "spring", "CTA"\]/);
+  assert.match(interfaceSource, /查看 \{motion\.tags\.length\} 个相关术语/);
+  assert.doesNotMatch(interfaceSource, /className="tag-row"/);
 });

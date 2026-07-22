@@ -120,12 +120,15 @@ button { cursor: pointer; }
 .demo-inner { position: relative; z-index: 1; display: grid; place-items: center; width: 100%; min-height: inherit; padding: 32px; }
 .demo-sleep { color: #415748; font: 9px var(--font-mono); letter-spacing: .2em; }
 
-.card-copy { min-height: 112px; padding: 17px 18px; }
-.card-copy p { margin: 0 0 15px; color: #92a398; font-size: 12px; line-height: 1.7; }
-.tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
-.tag-row button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 7px; border: 1px solid #314a39; background: #0b1710; color: #8ca093; font: 9px var(--font-mono); }
-.tag-row button:hover { border-color: var(--amber); color: var(--amber); background: rgba(255,180,92,.05); }
-.tag-row button i { display: grid; place-items: center; width: 13px; height: 13px; border: 1px solid currentColor; border-radius: 50%; font-size: 7px; font-style: normal; opacity: .65; }
+.card-copy { min-height: 136px; padding: 17px 18px 0; }
+.card-copy > p { min-height: 41px; margin: 0 0 14px; color: #92a398; font-size: 12px; line-height: 1.7; }
+.card-context { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; align-items: center; min-height: 62px; border-top: 1px solid #253a2d; }
+.card-context > div { min-width: 0; }
+.card-context small { display: block; margin-bottom: 4px; color: #52685a; font: 8px var(--font-mono); letter-spacing: .08em; }
+.card-context span { display: block; overflow: hidden; color: #8ca093; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+.card-context button { align-self: stretch; padding: 0 0 0 14px; border: 0; border-left: 1px solid #253a2d; background: transparent; color: #687d6f; font: 8px var(--font-mono); white-space: nowrap; }
+.card-context button:hover { color: var(--amber); }
+.card-context button i { margin-left: 4px; color: var(--amber); font-style: normal; }
 .card-actions { display: grid; grid-template-columns: auto auto 1fr 1.25fr; border-top: 1px solid var(--line); }
 .card-actions button { min-height: 45px; border: 0; border-right: 1px solid var(--line); background: transparent; color: #788c7e; font: 9px var(--font-mono); }
 .card-actions button:hover, .card-actions button.active { background: #132219; color: var(--phosphor); }

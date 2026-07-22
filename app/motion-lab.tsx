@@ -631,7 +631,13 @@ export default function MotionLab() {
             <article className="motion-card" key={motion.id}>
               <div className="card-head"><span>{motion.index}</span><div><small>{motion.category} / {motion.engine}</small><h2>{motion.title}</h2></div><button className={favorites.has(motion.id) ? "is-favorite" : ""} aria-label={`收藏${motion.title}`} onClick={() => toggleFavorite(motion.id)}>{favorites.has(motion.id) ? "♥" : "♡"}</button></div>
               <DemoStage motion={motion} speed={isSlow ? 0.5 : 1} reduced={reduced} runId={runIds[motion.id] || 0} />
-              <div className="card-copy"><p>{motion.description}</p><div className="tag-row" aria-label="动效标签">{motion.tags.map((tag) => { const entry = getGlossaryEntry(tag); return <button key={tag} onClick={() => openGlossary(tag)} title={`查看 ${entry?.term || tag} 的解释`}>{entry?.label || tag}<i>?</i></button>; })}</div></div>
+              <div className="card-copy">
+                <p>{motion.description}</p>
+                <div className="card-context">
+                  <div><small>适合用在</small><span>{motion.useCase}</span></div>
+                  <button onClick={() => openGlossary()}>查看 {motion.tags.length} 个相关术语 <i>↗</i></button>
+                </div>
+              </div>
               <div className="card-actions"><button onClick={() => replay(motion.id)}>↻ 重播</button><button className={isSlow ? "active" : ""} onClick={() => toggleSlow(motion.id)}>{isSlow ? "0.5×" : "1×"}</button><button onClick={() => { setSelectedId(motion.id); setCodeTab("full"); }}>查看代码</button><button className="copy-action" onClick={() => copyMotion(motion)}>{copied === motion.id ? "✓ 已复制" : "复制片段"}</button></div>
             </article>
           );
