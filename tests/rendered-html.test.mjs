@@ -57,4 +57,7 @@ test("glossary explains every card tag in plain Chinese", async () => {
   assert.doesNotMatch(interfaceSource, /setCycle|key=\{`\$\{cycle\}/);
   assert.match(interfaceSource, /const loop = window\.setInterval\(play/);
   assert.match(interfaceSource, /<h2>\{motion\.title\}<\/h2><small>\{categoryCode\[motion\.category\]\} \/ \{engineCode\[motion\.engine\]\}<\/small>/);
+  assert.match(interfaceSource, /function CustomSelect/);
+  assert.match(interfaceSource, /role="listbox"/);
+  assert.doesNotMatch(interfaceSource, /<select value=\{category\}/);
 });

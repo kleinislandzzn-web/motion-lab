@@ -2,10 +2,12 @@
 
 import {
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -542,6 +544,111 @@ function CodeBlock({ code }: { code: string }) {
   return <pre className="code-block"><code>{code}</code></pre>;
 }
 
+function CustomSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: readonly string[];
+  onChange: (value: string) => void;
+}) {
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const listboxId = useId();
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(Math.max(0, options.indexOf(value)));
+
+  useEffect(() => {
+    if (!open) return;
+    function closeOnOutside(event: PointerEvent) {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", closeOnOutside);
+    return () => document.removeEventListener("pointerdown", closeOnOutside);
+  }, [open]);
+
+  function choose(index: number) {
+    onChange(options[index]);
+    setActiveIndex(index);
+    setOpen(false);
+    trigger.current?.focus();
+  }
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      if (!open) {
+        setActiveIndex(Math.max(0, options.indexOf(value)));
+        setOpen(true);
+      } else {
+        setActiveIndex((current) => (current + direction + options.length) % options.length);
+      }
+      return;
+    }
+    if (open && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      choose(activeIndex);
+      return;
+    }
+    if (open && (event.key === "Home" || event.key === "End")) {
+      event.preventDefault();
+      setActiveIndex(event.key === "Home" ? 0 : options.length - 1);
+    }
+  }
+
+  return (
+    <div className={`custom-select ${open ? "is-open" : ""}`} ref={root}>
+      <small>{label}</small>
+      <button
+        ref={trigger}
+        type="button"
+        className="custom-select-trigger"
+        role="combobox"
+        aria-label={`${label}：${value}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        aria-activedescendant={open ? `${listboxId}-${activeIndex}` : undefined}
+        onClick={() => {
+          setActiveIndex(Math.max(0, options.indexOf(value)));
+          setOpen((current) => !current);
+        }}
+        onKeyDown={handleKeyDown}
+      >
+        <span>{value}</span><i aria-hidden="true" />
+      </button>
+      {open && (
+        <ul className="custom-select-menu" id={listboxId} role="listbox" aria-label={label}>
+          {options.map((item, index) => (
+            <li
+              id={`${listboxId}-${index}`}
+              role="option"
+              aria-selected={item === value}
+              className={`${item === value ? "selected" : ""} ${index === activeIndex ? "active" : ""}`}
+              onMouseEnter={() => setActiveIndex(index)}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => choose(index)}
+              key={item}
+            >
+              <span>{item}</span><i>{item === value ? "✓" : ""}</i>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function GlossaryPage({
   initialTerm,
   onBack,
@@ -762,8 +869,8 @@ export default function MotionLab() {
 
       <section className="control-deck" aria-label="动效筛选器">
         <label className="lab-search"><span>⌕</span><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索动效名称或用途…" /><kbd>/</kbd></label>
-        <label><small>动效类型</small><select value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <label><small>实现方式</small><select value={engine} onChange={(event) => setEngine(event.target.value)}>{engines.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <CustomSelect label="动效类型" value={category} options={categories} onChange={setCategory} />
+        <CustomSelect label="实现方式" value={engine} options={engines} onChange={setEngine} />
         <button className={favoritesOnly ? "filter-active" : ""} onClick={() => setFavoritesOnly((value) => !value)}>♡ 收藏 {favorites.size ? `(${favorites.size})` : ""}</button>
         <button className={reduced ? "filter-active" : ""} onClick={() => setReduced((value) => !value)}>≈ 减弱动效</button>
         <button className="glossary-link" onClick={() => openGlossary()}>? 标签词典 <b>{glossaryEntries.length}</b></button>
