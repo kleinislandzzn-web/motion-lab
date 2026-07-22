@@ -91,7 +91,12 @@ button { cursor: pointer; }
 .custom-select-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .custom-select-trigger > i { flex: 0 0 auto; width: 6px; height: 6px; margin: -3px 2px 0 0; border-right: 1px solid #718478; border-bottom: 1px solid #718478; transform: rotate(45deg); transition: transform .2s, margin .2s, border-color .2s; }
 .custom-select.is-open .custom-select-trigger > i { margin-top: 3px; border-color: var(--phosphor); transform: rotate(225deg); }
-.custom-select-menu { position: absolute; top: calc(100% + 8px); left: -1px; right: -1px; z-index: 30; max-height: 310px; overflow: auto; margin: 0; padding: 6px; border: 1px solid #4b6a55; background: rgba(8,18,12,.98); box-shadow: 0 24px 55px rgba(0,0,0,.58), inset 0 0 28px rgba(183,255,60,.025); list-style: none; animation: dropdown-in .18s ease-out; }
+.custom-select-menu { position: absolute; top: calc(100% + 8px); left: -1px; right: -1px; z-index: 30; max-height: 310px; overflow: auto; margin: 0; padding: 6px; border: 1px solid #4b6a55; background: rgba(8,18,12,.98); box-shadow: 0 24px 55px rgba(0,0,0,.58), inset 0 0 28px rgba(183,255,60,.025); scrollbar-color: var(--phosphor-soft) #07110c; scrollbar-gutter: stable; scrollbar-width: thin; list-style: none; animation: dropdown-in .18s ease-out; }
+.custom-select-menu::-webkit-scrollbar { width: 8px; }
+.custom-select-menu::-webkit-scrollbar-track { border-left: 1px solid #294532; background: repeating-linear-gradient(to bottom,#07110c 0 8px,#102218 8px 9px); }
+.custom-select-menu::-webkit-scrollbar-thumb { border: 2px solid #07110c; border-radius: 0; background: linear-gradient(to bottom,var(--phosphor),#6f9f31); box-shadow: inset 0 0 0 1px rgba(220,255,160,.45),0 0 8px rgba(183,255,60,.28); }
+.custom-select-menu::-webkit-scrollbar-thumb:hover { background: #c8ff69; box-shadow: inset 0 0 0 1px #f1ffd7,0 0 12px rgba(183,255,60,.48); }
+.custom-select-menu::-webkit-scrollbar-corner { background: #07110c; }
 .custom-select-menu::before { display: block; margin: 2px 7px 6px; color: #466052; font: 7px var(--font-mono); letter-spacing: .16em; content: "SELECT OPTION"; }
 .custom-select-menu li { display: flex; align-items: center; justify-content: space-between; min-height: 34px; padding: 0 9px; border: 1px solid transparent; color: #87998d; font: 10px var(--font-mono); cursor: pointer; }
 .custom-select-menu li.active { border-color: #36503f; background: #101f16; color: var(--paper); }

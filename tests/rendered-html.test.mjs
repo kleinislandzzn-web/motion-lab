@@ -60,4 +60,7 @@ test("glossary explains every card tag in plain Chinese", async () => {
   assert.match(interfaceSource, /function CustomSelect/);
   assert.match(interfaceSource, /role="listbox"/);
   assert.doesNotMatch(interfaceSource, /<select value=\{category\}/);
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(styles, /\.custom-select-menu::-webkit-scrollbar-thumb/);
+  assert.match(styles, /scrollbar-color: var\(--phosphor-soft\)/);
 });
