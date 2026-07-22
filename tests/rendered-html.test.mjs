@@ -38,3 +38,16 @@ test("catalog contains 15 uniquely scoped samples", async () => {
   assert.match(source, /gsap@3\.13\.0/);
   assert.match(source, /animejs@4\.4\.1/);
 });
+
+test("glossary explains every card tag in plain Chinese", async () => {
+  const [catalog, glossary] = await Promise.all([
+    readFile(new URL("../app/motion-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/glossary-data.ts", import.meta.url), "utf8"),
+  ]);
+  const terms = [...glossary.matchAll(/\{ id: "([^"]+)", term: "([^"]+)"/g)];
+  assert.ok(terms.length >= 40);
+  assert.match(glossary, /label: "指针跟随"/);
+  assert.match(glossary, /label: "关键行动按钮"/);
+  assert.match(glossary, /label: "布局过渡技术"/);
+  assert.match(catalog, /tags: \["pointer", "spring", "CTA"\]/);
+});

@@ -16,6 +16,12 @@ import { Draggable } from "gsap/Draggable";
 import { Flip } from "gsap/Flip";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
+  getGlossaryEntry,
+  glossaryCategories,
+  glossaryEntries,
+  type GlossaryEntry,
+} from "./glossary-data";
+import {
   categories,
   engines,
   getFullSnippet,
@@ -384,6 +390,89 @@ function CodeBlock({ code }: { code: string }) {
   return <pre className="code-block"><code>{code}</code></pre>;
 }
 
+function GlossaryPage({
+  initialTerm,
+  onBack,
+  onSelectTerm,
+}: {
+  initialTerm?: string;
+  onBack: () => void;
+  onSelectTerm: (id: string) => void;
+}) {
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<(typeof glossaryCategories)[number]>("全部");
+  const selected = initialTerm ? glossaryEntries.find((entry) => entry.id === initialTerm) : undefined;
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return glossaryEntries.filter((entry) => {
+      const searchable = [entry.term, entry.label, entry.summary, entry.explanation, entry.example].join(" ").toLowerCase();
+      return (!needle || searchable.includes(needle)) && (category === "全部" || entry.category === category);
+    });
+  }, [query, category]);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "/" && document.activeElement?.tagName !== "INPUT") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function choose(entry: GlossaryEntry) {
+    onSelectTerm(entry.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  const relatedMotions = selected
+    ? motions.filter((motion) => motion.tags.some((tag) => getGlossaryEntry(tag)?.id === selected.id))
+    : [];
+
+  return (
+    <div className="glossary-page">
+      <header className="glossary-header">
+        <div className="header-topline"><span>ML_SYS / TERM DATABASE</span><span className="system-live"><i /> DICTIONARY ONLINE</span><span>{glossaryEntries.length} TERMS INDEXED</span></div>
+        <button className="back-to-archive" onClick={onBack}>← 返回动效收藏馆</button>
+        <div className="glossary-hero">
+          <div><p className="eyebrow">MOTION GLOSSARY / 动效术语查询</p><h1>标签<br /><span>词典_</span></h1></div>
+          <div><p>这里收录网站中出现的专业词汇。你不需要先成为开发者，只要搜索一个不理解的标签，就能知道它是什么、为什么使用，以及在哪个案例里能看到。</p><b>{String(glossaryEntries.length).padStart(2, "0")}<small>TERMS / 术语</small></b></div>
+        </div>
+      </header>
+
+      <section className="glossary-controls" aria-label="术语筛选器">
+        <label className="lab-search"><span>⌕</span><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索英文、中文或解释…" /><kbd>/</kbd></label>
+        <div className="glossary-category-row">{glossaryCategories.map((item) => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}</div>
+      </section>
+
+      {selected && (
+        <section className="term-focus">
+          <div className="term-focus-code"><small>SELECTED TERM</small><strong>{selected.term}</strong><span>{selected.label}</span></div>
+          <div className="term-focus-copy"><small>{selected.category}</small><h2>{selected.summary}</h2><p>{selected.explanation}</p><blockquote><b>举个例子</b>{selected.example}</blockquote></div>
+          <div className="term-related"><small>本站对应案例</small>{relatedMotions.length ? relatedMotions.map((motion) => <span key={motion.id}>{motion.index} / {motion.title}</span>) : <span>通用技术概念</span>}</div>
+        </section>
+      )}
+
+      <div className="result-line glossary-results"><span>DICTIONARY RESULTS</span><b>{String(filtered.length).padStart(2, "0")} / {glossaryEntries.length}</b><i /></div>
+      <section className="glossary-grid">
+        {filtered.map((entry) => (
+          <button className={`glossary-card ${selected?.id === entry.id ? "selected" : ""}`} onClick={() => choose(entry)} key={entry.id}>
+            <div><small>{entry.category}</small><span>↗</span></div>
+            <strong>{entry.term}</strong>
+            <h2>{entry.label}</h2>
+            <p>{entry.summary}</p>
+            <em>查看完整解释</em>
+          </button>
+        ))}
+      </section>
+      {!filtered.length && <section className="empty-state glossary-empty"><b>NO TERM FOUND</b><p>没有匹配的术语，试试更短的关键词。</p><button onClick={() => { setQuery(""); setCategory("全部"); }}>清除搜索</button></section>}
+      <footer className="lab-footer"><div><b>MOTION GLOSSARY_</b><p>不要求你懂术语，只负责把它们讲明白。</p></div><div><span>触发方式</span><span>动效表现</span><span>使用场景</span></div><small>PLAIN LANGUAGE · SEARCHABLE · LOCAL FIRST</small></footer>
+    </div>
+  );
+}
+
 export default function MotionLab() {
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -397,6 +486,8 @@ export default function MotionLab() {
   const [copied, setCopied] = useState<string>();
   const [runIds, setRunIds] = useState<Record<string, number>>({});
   const [slowIds, setSlowIds] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<"archive" | "glossary">("archive");
+  const [glossaryTerm, setGlossaryTerm] = useState<string>();
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -409,6 +500,17 @@ export default function MotionLab() {
   }, []);
 
   useEffect(() => {
+    function syncFromHash() {
+      const match = window.location.hash.match(/^#glossary(?:\/([a-z0-9-]+))?/i);
+      setView(match ? "glossary" : "archive");
+      setGlossaryTerm(match?.[1]);
+    }
+    const frame = window.requestAnimationFrame(syncFromHash);
+    window.addEventListener("hashchange", syncFromHash);
+    return () => { window.cancelAnimationFrame(frame); window.removeEventListener("hashchange", syncFromHash); };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem("motion-lab:favorites", JSON.stringify([...favorites]));
   }, [favorites]);
 
@@ -418,15 +520,18 @@ export default function MotionLab() {
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key === "/" && document.activeElement?.tagName !== "INPUT") {
+      if (view === "archive" && event.key === "/" && document.activeElement?.tagName !== "INPUT") {
         event.preventDefault();
         searchRef.current?.focus();
       }
-      if (event.key === "Escape") setSelectedId(undefined);
+      if (event.key === "Escape") {
+        if (selectedId) setSelectedId(undefined);
+        else if (view === "glossary") closeGlossary();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [selectedId, view]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -464,7 +569,37 @@ export default function MotionLab() {
     window.setTimeout(() => setCopied(undefined), 1500);
   }
 
+  function openGlossary(term?: string) {
+    const resolved = term ? getGlossaryEntry(term)?.id : undefined;
+    setGlossaryTerm(resolved);
+    setSelectedId(undefined);
+    setView("glossary");
+    window.history.pushState(null, "", `#glossary${resolved ? `/${resolved}` : ""}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function selectGlossaryTerm(id: string) {
+    setGlossaryTerm(id);
+    window.history.replaceState(null, "", `#glossary/${id}`);
+  }
+
+  function closeGlossary() {
+    setView("archive");
+    setGlossaryTerm(undefined);
+    window.history.pushState(null, "", `${window.location.pathname}${window.location.search}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   const currentCode = selected ? codeTab === "html" ? selected.html : codeTab === "css" ? selected.css : codeTab === "js" ? selected.js : getFullSnippet(selected) : "";
+
+  if (view === "glossary") {
+    return (
+      <main className="motion-lab-shell glossary-shell">
+        <div className="ambient ambient-a" /><div className="ambient ambient-b" />
+        <GlossaryPage initialTerm={glossaryTerm} onBack={closeGlossary} onSelectTerm={selectGlossaryTerm} />
+      </main>
+    );
+  }
 
   return (
     <main className="motion-lab-shell">
@@ -473,17 +608,18 @@ export default function MotionLab() {
         <div className="header-topline"><span>ML_SYS / 2026</span><span className="system-live"><i /> SYSTEM ONLINE</span><span>SHANGHAI +08:00</span></div>
         <div className="hero-copy">
           <div><p className="eyebrow">INTERACTION ARCHIVE / 可复制动效零件库</p><h1>MOTION<br /><span>LAB_</span></h1></div>
-          <div className="hero-aside"><p>把好玩的网页动效变成真正可带走的零件。现场试玩，拆开阅读，然后复制到你的下一个 HTML 项目。</p><div className="hero-stats"><b>15<small>SAMPLES</small></b><b>03<small>ENGINES</small></b><b>01<small>HTML</small></b></div></div>
+          <div className="hero-aside"><p>把好玩的网页动效变成真正可带走的零件。现场试玩，拆开阅读，然后复制到你的下一个 HTML 项目。</p><div className="hero-stats"><b>15<small>动效案例</small></b><b>03<small>实现方式</small></b><b>{glossaryEntries.length}<small>术语解释</small></b></div></div>
         </div>
         <div className="signal-line"><span /><i /><span /></div>
       </header>
 
       <section className="control-deck" aria-label="动效筛选器">
-        <label className="lab-search"><span>⌕</span><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索动效、标签或引擎…" /><kbd>/</kbd></label>
-        <label><small>CATEGORY</small><select value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <label><small>ENGINE</small><select value={engine} onChange={(event) => setEngine(event.target.value)}>{engines.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label className="lab-search"><span>⌕</span><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索动效名称或用途…" /><kbd>/</kbd></label>
+        <label><small>动效类型</small><select value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label><small>实现方式</small><select value={engine} onChange={(event) => setEngine(event.target.value)}>{engines.map((item) => <option key={item}>{item}</option>)}</select></label>
         <button className={favoritesOnly ? "filter-active" : ""} onClick={() => setFavoritesOnly((value) => !value)}>♡ 收藏 {favorites.size ? `(${favorites.size})` : ""}</button>
         <button className={reduced ? "filter-active" : ""} onClick={() => setReduced((value) => !value)}>≈ 减弱动效</button>
+        <button className="glossary-link" onClick={() => openGlossary()}>? 标签词典 <b>{glossaryEntries.length}</b></button>
       </section>
 
       <div className="result-line"><span>ARCHIVE RESULTS</span><b>{String(filtered.length).padStart(2, "0")} / {motions.length}</b><i /></div>
@@ -495,7 +631,7 @@ export default function MotionLab() {
             <article className="motion-card" key={motion.id}>
               <div className="card-head"><span>{motion.index}</span><div><small>{motion.category} / {motion.engine}</small><h2>{motion.title}</h2></div><button className={favorites.has(motion.id) ? "is-favorite" : ""} aria-label={`收藏${motion.title}`} onClick={() => toggleFavorite(motion.id)}>{favorites.has(motion.id) ? "♥" : "♡"}</button></div>
               <DemoStage motion={motion} speed={isSlow ? 0.5 : 1} reduced={reduced} runId={runIds[motion.id] || 0} />
-              <div className="card-copy"><p>{motion.description}</p><div className="tag-row">{motion.tags.map((tag) => <span key={tag}>{tag}</span>)}</div></div>
+              <div className="card-copy"><p>{motion.description}</p><div className="tag-row" aria-label="动效标签">{motion.tags.map((tag) => { const entry = getGlossaryEntry(tag); return <button key={tag} onClick={() => openGlossary(tag)} title={`查看 ${entry?.term || tag} 的解释`}>{entry?.label || tag}<i>?</i></button>; })}</div></div>
               <div className="card-actions"><button onClick={() => replay(motion.id)}>↻ 重播</button><button className={isSlow ? "active" : ""} onClick={() => toggleSlow(motion.id)}>{isSlow ? "0.5×" : "1×"}</button><button onClick={() => { setSelectedId(motion.id); setCodeTab("full"); }}>查看代码</button><button className="copy-action" onClick={() => copyMotion(motion)}>{copied === motion.id ? "✓ 已复制" : "复制片段"}</button></div>
             </article>
           );
