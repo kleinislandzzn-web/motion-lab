@@ -1,98 +1,44 @@
-# vinext-starter
+# Motion Lab
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+一个面向设计师的 Web 动效情绪板与可复制交互组件库。
 
-## Prerequisites
+浏览组件、调整参数、切换播放速度，并从详情页复制 HTML、CSS、JavaScript 或完整片段。网站本体采用 Editorial Minimalism 视觉，组件内部可以保留各自不同的视觉风格。
 
-- Node.js `>=22.13.0`
+## 在线访问
 
-## Quick Start
+[打开 Motion Lab](https://kleinislandzzn-web.github.io/motion-lab/)
+
+当前版本包含 54 个组件、9 个类别，支持全局主题色、浅色/深色预览、风格与实现方式筛选、收藏、参数调节和代码复制。
+
+## 本地运行
+
+要求 Node.js `>=22.13.0`。
 
 ```bash
 npm install
 npm run dev
+```
+
+常用命令：
+
+```bash
+npm run lint
+npm test
 npm run build
+npm run build:pages
 ```
 
-This starter does not use `wrangler.jsonc`.
+## 项目入口
 
-## Included Shape
+- `app/motion-data.ts`：全部动效定义、元数据和可复制源码
+- `app/motion-lab.tsx`：网站界面与预览组件
+- `app/globals.css`：网站和动效预览样式
+- `app/glossary-data.ts`：标签词典
+- `tests/`：组件与复制片段测试
+- `docs/index.html`：自动生成的 GitHub Pages 文件，请勿直接修改
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+更完整的维护说明见 [PROJECT_NOTES.md](./PROJECT_NOTES.md)。
 
-## Workspace Auth Headers
+## 数据范围
 
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+收藏、筛选偏好、主题色与减少动效设置仅保存在浏览器本地，不上传账号数据。
